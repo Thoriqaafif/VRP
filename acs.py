@@ -7,22 +7,35 @@ gamma = 0.1  # global pheromone decay rate
 q0 = 0.9  # exploration vs exploitation threshold
 num_ants = 4  # number of ants
 max_iter = 100  # max iterations
-N = 5  # number of nodes
-LNN = 100  # some total travel time value from clustering
+nodes = [66, 277, 322] 
 
-tau0 = 1 / (N * LNN)  # initial pheromone value
+
+node_connections = {
+    66: [62, 1, 101, 60, 141, 189, 174, 113, 81, 7, 12, 44, 21, 46, 28, 4, 355, 256, 235, 104],
+    277: [296, 135, 106, 175, 181, 161, 205, 95, 244, 242, 39, 408, 292, 399],
+    322: [376, 221, 144, 210, 264, 289, 248, 140, 400, 386, 298, 177, 333, 315, 254, 402]
+}
+
+
+inf = float('inf')
+N = len(node_connections)
+distances = [[inf for _ in range(N)] for _ in range(N)]
+node_to_index = {node: i for i, node in enumerate(node_connections.keys())}
+
+
+for node, connections in node_connections.items():
+    for connected_node in connections:
+        if connected_node in node_to_index:
+            i, j = node_to_index[node], node_to_index[connected_node]
+            distances[i][j] = 1  
+
+# Initialize pheromone
+LNN = 100  
+tau0 = 1 / (N * LNN)  
 pheromone = [[tau0 for _ in range(N)] for _ in range(N)]
 
-distances = [
-    [0, 2, 9, 10, 7],
-    [2, 0, 6, 4, 3],
-    [9, 6, 0, 8, 5],
-    [10, 4, 8, 0, 1],
-    [7, 3, 5, 1, 0]
-]
-
 def calculate_visibility():
-    visibility = [[0 if i == j else 1/distances[i][j] for j in range(N)] for i in range(N)]
+    visibility = [[0 if i == j else 1/distances[i][j] if distances[i][j] != inf else 0 for j in range(N)] for i in range(N)]
     return visibility
 
 visibility = calculate_visibility()
@@ -44,8 +57,8 @@ def local_pheromone_update(pheromone, i, j):
 
 def global_pheromone_update(pheromone, best_solution, best_cost, iteration_best_cost, third_best_cost):
     A = third_best_cost
-    B = best_cost  # Best overall cost across all iterations
-    C = iteration_best_cost  # Best cost within the current iteration
+    B = best_cost  
+    C = iteration_best_cost 
 
     delta_tau = ((A - B) + (A - C)) / A
 
@@ -78,9 +91,8 @@ def acs():
             all_solutions.append(tour)
             all_costs.append(cost)
 
-        # Sort costs to get best and third-best solutions in the current iteration
         sorted_costs = sorted(all_costs)
-        iteration_best_cost = sorted_costs[0]  # Best solution in this iteration
+        iteration_best_cost = sorted_costs[0] 
         third_best_cost = sorted_costs[2] if len(sorted_costs) >= 3 else third_best_cost  # 3rd best in current iteration
 
         if iteration_best_cost < best_cost:
@@ -88,13 +100,12 @@ def acs():
 
         best_solution = all_solutions[all_costs.index(best_cost)]
 
-        # Global pheromone update
         global_pheromone_update(pheromone, zip(best_solution[:-1], best_solution[1:]), best_cost, iteration_best_cost, third_best_cost)
 
         print(f"Iteration {iteration+1}: Best cost = {best_cost}")
 
     return best_solution, best_cost
 
-# Run the ACS algorithm
+
 best_solution, best_cost = acs()
 print(f"Best solution found: {best_solution} with cost {best_cost}")
