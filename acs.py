@@ -7,39 +7,55 @@ gamma = 0.1  # global pheromone decay rate
 q0 = 0.9  # exploration vs exploitation threshold
 num_ants = 4  # number of ants
 max_iter = 100  # max iterations
-nodes = [66, 277, 322] 
 
-
+# Node untuk Depo 1 dan konsumennya
 node_connections = {
-    66: [62, 1, 101, 60, 141, 189, 174, 113, 81, 7, 12, 44, 21, 46, 28, 4, 355, 256, 235, 104],
-    277: [296, 135, 106, 175, 181, 161, 205, 95, 244, 242, 39, 408, 292, 399],
-    322: [376, 221, 144, 210, 264, 289, 248, 140, 400, 386, 298, 177, 333, 315, 254, 402]
+    66: [189, 174, 113, 46, 62, 60, 141, 81, 44, 39, 28, 140, 101, 4, 21, 254, 12, 7, 235, 144, 1, 104],  # Depo 1 connections
+    277: [408, 95, 399, 296, 135, 292, 242, 205, 244, 161, 181, 175, 106],       # Depo 2 connections
+    322: [210, 386, 248, 289, 298, 264, 221, 355, 256, 315, 402, 400, 333, 177, 376],      # Depo 3 connections
+    # Add other nodes based on clusters
 }
 
-
 inf = float('inf')
-N = len(node_connections)
+nodes = list(node_connections.keys()) + list(node_connections["Depo 1"])
+N = len(nodes)
+
+
+
+
+
+
+# Initialize distances with infinity (inf) as before
 distances = [[inf for _ in range(N)] for _ in range(N)]
-node_to_index = {node: i for i, node in enumerate(node_connections.keys())}
+
+# Mengaitkan node dengan indeks
+node_to_index = {node: i for i, node in enumerate(nodes)}
+
+# Loop through the predefined distance data
+for (node1, node2), distance in predefined_distances.items():
+    i, j = node_to_index[node1], node_to_index[node2]
+    distances[i][j] = distance  # Set the distance
+    distances[j][i] = distance  # Ensure symmetry for undirected connections
+
+# Optionally, set distance from a node to itself as 0 (if needed)
+for i in range(N):
+    distances[i][i] = 0
 
 
-for node, connections in node_connections.items():
-    for connected_node in connections:
-        if connected_node in node_to_index:
-            i, j = node_to_index[node], node_to_index[connected_node]
-            distances[i][j] = 1  
 
 # Initialize pheromone
-LNN = 100  
-tau0 = 1 / (N * LNN)  
+LNN = 100  # some constant representing average tour length
+tau0 = 1 / (N * LNN)  # initial pheromone value
 pheromone = [[tau0 for _ in range(N)] for _ in range(N)]
 
+# Visibility calculation (inverse of distance)
 def calculate_visibility():
     visibility = [[0 if i == j else 1/distances[i][j] if distances[i][j] != inf else 0 for j in range(N)] for i in range(N)]
     return visibility
 
 visibility = calculate_visibility()
 
+# State transition rule with error handling for zero probabilities
 def state_transition(pheromone, visibility, current_node, unvisited):
     q = random.random()
     unvisited_list = list(unvisited)
@@ -48,13 +64,22 @@ def state_transition(pheromone, visibility, current_node, unvisited):
     else:  # Exploration
         probabilities = [(pheromone[current_node][j] ** alpha) * (visibility[current_node][j] ** beta) for j in unvisited]
         total_prob = sum(probabilities)
-        probabilities = [p / total_prob for p in probabilities]
-        next_node = random.choices(unvisited_list, probabilities)[0]
+
+        if total_prob == 0:
+            # Jika total_prob 0, pilih node secara acak
+            next_node = random.choice(unvisited_list)
+        else:
+            probabilities = [p / total_prob for p in probabilities]
+            next_node = random.choices(unvisited_list, probabilities)[0]
+
     return next_node
 
+
+# Local pheromone update
 def local_pheromone_update(pheromone, i, j):
     pheromone[i][j] = (1 - rho) * pheromone[i][j] + rho * tau0
 
+# Global pheromone update
 def global_pheromone_update(pheromone, best_solution, best_cost, iteration_best_cost, third_best_cost):
     A = third_best_cost
     B = best_cost  
@@ -64,7 +89,8 @@ def global_pheromone_update(pheromone, best_solution, best_cost, iteration_best_
 
     for i, j in best_solution:
         pheromone[i][j] = (1 - gamma) * pheromone[i][j] + gamma * delta_tau
-        
+
+# Ant Colony System
 def acs():
     best_solution = None
     best_cost = float('inf')
@@ -75,8 +101,8 @@ def acs():
         all_costs = []
 
         for ant in range(num_ants):
-            current_node = random.randint(0, N-1)
-            unvisited = set(range(N)) - {current_node}
+            current_node = random.randint(0, N-1)  # Starting point
+            unvisited = set(range(N)) - {current_node}  # Remaining nodes to visit
             tour = [current_node]
             cost = 0
 
@@ -90,15 +116,15 @@ def acs():
 
             all_solutions.append(tour)
             all_costs.append(cost)
-
+        
+        # Sorting to find the best and third best solutions
         sorted_costs = sorted(all_costs)
         iteration_best_cost = sorted_costs[0] 
-        third_best_cost = sorted_costs[2] if len(sorted_costs) >= 3 else third_best_cost  # 3rd best in current iteration
+        third_best_cost = sorted_costs[2] if len(sorted_costs) >= 3 else third_best_cost
 
         if iteration_best_cost < best_cost:
             best_cost = iteration_best_cost
-
-        best_solution = all_solutions[all_costs.index(best_cost)]
+            best_solution = all_solutions[all_costs.index(best_cost)]
 
         global_pheromone_update(pheromone, zip(best_solution[:-1], best_solution[1:]), best_cost, iteration_best_cost, third_best_cost)
 
@@ -107,5 +133,6 @@ def acs():
     return best_solution, best_cost
 
 
+# Jalankan ACS untuk Depo 1
 best_solution, best_cost = acs()
 print(f"Best solution found: {best_solution} with cost {best_cost}")
