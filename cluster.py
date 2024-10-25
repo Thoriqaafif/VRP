@@ -5,6 +5,10 @@ import heapq
 import pandas as pd
 import json
 import numpy as np
+import time as tm
+
+# Start the timer
+start_time = tm.time()
 
 df = pd.read_excel('./dataset/Data SC ACO.xlsx', sheet_name='Sheet1')
 depot_df = pd.read_csv('./dataset/depot.csv')
@@ -128,7 +132,12 @@ while temp_customer:
     temp_customer.remove(indx)
     print(temp_customer)
 
+end_time = tm.time()
+elapsed_time = end_time - start_time
+print(f"Computation Time: {elapsed_time:.2f} seconds")
 print("C", C)
+
+
 
 with open("klaster.json", "w") as json_file:
     json.dump(C, json_file, indent=4)
