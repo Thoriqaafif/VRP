@@ -1,6 +1,15 @@
 # VRP
 
 ## How to run
+install all dependency for python:
+```
+pip install pandas networkx matplotlib numpy
+```
+run python Cluster
+```
+python cluster.py
+```
+We can get `klaster.json` as a result of **simplified parallel assignment** in every depot.
 
 ### ACS (Ant Colony System)
 
