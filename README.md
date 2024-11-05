@@ -7,9 +7,9 @@
 After we got the cluster result. We can move on to ACS program.
 Here are some steps to do:
 
-1. Save the clustering result with the name "klaster.json"
+1. Save the clustering result with the name `klaster.json`
 2. Run `acs.ipynb` program
-3. For Depo 1, here are some parameter that can be change (if needed)
+3. For Depo 1, here are some parameters that can be changed (if needed)
 
 ```py
 alpha = 0.7  # pheromone influence
@@ -21,7 +21,7 @@ num_ants = 300  # number of ants
 max_iter = 100  # max iterations
 ```
 
-4. When the program already run successfully, you can see the result for each Depo which provides best solution, destination cost, time cost, and travel path. Here is the example of the output
+4. When the program already run successfully, you can see the result for each Depo which provides best solution, destination cost, time cost, and travel path. Here is an example of the output
 
 ```py
 DEPO 1
